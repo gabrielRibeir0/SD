@@ -1,7 +1,7 @@
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-class Bank{
+class BankUmaConta{
   private static class Account {
     private int balance;
 
