@@ -20,7 +20,7 @@ class Mover implements Runnable {
     }
 }
 
-public class BankTest {
+public class BankTestOld {
     public static void main(String[] args) throws InterruptedException {
         final int N = 10;
 

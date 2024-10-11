@@ -1,6 +1,7 @@
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 class Bank {
 
@@ -23,12 +24,12 @@ class Bank {
 
     private Map<Integer, Account> map = new HashMap<Integer, Account>();
     private int nextId = 0;
-    private Lock lock = new ReentrantLock();
+    private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     // create account and return account id
     public int createAccount(int balance) {
         Account c = new Account(balance);
-        this.lock.lock();
+        this.lock.writeLock().lock();
         try {
             int id = nextId;
             nextId += 1;
@@ -36,14 +37,14 @@ class Bank {
             return id;
         }
         finally {
-            this.lock.unlock();
+            this.lock.writeLock().unlock();
         }
     }
 
     // close account and return balance, or 0 if no such account
     public int closeAccount(int id) {
         Account c;
-        this.lock.lock();
+        this.lock.writeLock().lock();
         try {
             c = map.remove(id);
             if (c == null)
@@ -51,7 +52,7 @@ class Bank {
             c.lock.lock();
         }
         finally {
-            this.lock.unlock();
+            this.lock.writeLock().unlock();
         }
 
         try {
@@ -65,7 +66,7 @@ class Bank {
     // account balance; 0 if no such account
     public int balance(int id) {
         Account c;
-        this.lock.lock();
+        this.lock.readLock().lock();
         try {
             c = map.get(id);
             if (c == null)
@@ -73,7 +74,7 @@ class Bank {
             c.lock.lock();
         }
         finally {
-            this.lock.unlock();
+            this.lock.readLock().unlock();
         }
 
         try {
@@ -87,7 +88,7 @@ class Bank {
     // deposit; fails if no such account
     public boolean deposit(int id, int value) {
         Account c;
-        this.lock.lock();
+        this.lock.readLock().lock();
         try {
             c = map.get(id);
             if (c == null)
@@ -95,7 +96,7 @@ class Bank {
             c.lock.lock();
         }
         finally {
-            this.lock.unlock();
+            this.lock.readLock().unlock();
         }
 
         try {
@@ -109,7 +110,7 @@ class Bank {
     // withdraw; fails if no such account or insufficient balance
     public boolean withdraw(int id, int value) {
         Account c;
-        this.lock.lock();
+        this.lock.readLock().lock();
         try {
             c = map.get(id);
             if (c == null)
@@ -117,7 +118,7 @@ class Bank {
             c.lock.lock();
         }
         finally {
-            this.lock.unlock();
+            this.lock.readLock().unlock();
         }
 
         try {
@@ -132,7 +133,7 @@ class Bank {
     // fails if either account does not exist or insufficient balance
     public boolean transfer(int from, int to, int value) {
         Account cfrom, cto;
-        this.lock.lock();
+        this.lock.readLock().lock();
 
         try {
             cfrom = map.get(from);
@@ -151,7 +152,7 @@ class Bank {
             }
         }
         finally {
-            this.lock.unlock();
+            this.lock.readLock().unlock();
         }
 
         try {
@@ -172,7 +173,7 @@ class Bank {
 
     // sum of balances in set of accounts; 0 if some does not exist
     public int totalBalance(int[] ids) {
-        this.lock.lock();
+        this.lock.readLock().lock();
         int total = 0;
         Account[] accs = new Account[ids.length];
 
@@ -190,7 +191,7 @@ class Bank {
             }
         }
         finally {
-            this.lock.unlock();
+            this.lock.readLock().unlock();
         }
 
         for (Account c : accs) {
