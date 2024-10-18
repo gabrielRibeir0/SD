@@ -8,59 +8,82 @@ class Warehouse {
     private Lock lock = new ReentrantLock();
 
     private class Product {
-        Lock lock = new ReentrantLock();
         Condition outOfStock = lock.newCondition();
         int quantity = 0;
     }
 
     private Product get(String item) {
-        this.lock.lock();
-        try {
-            Product p = map.get(item);
-            if (p != null) return p;
-            p = new Product();
-            map.put(item, p);
-            return p;
-        }
-        finally {
-            this.lock.unlock();
-        }
+        Product p = map.get(item);
+        if (p != null) return p;
+        p = new Product();
+        map.put(item, p);
+        return p;
     }
 
     public void supply(String item, int quantity) {
-        Product p = get(item);
-        p.lock.lock();
+        lock.lock();
         try {
-            int oldQuantity = p.quantity;
+            Product p = get(item);
             p.quantity += quantity;
-            if (oldQuantity == 0){
-                for(int i = 0; i < quantity; i++) {
-                    p.outOfStock.signal();
-                }
-            }
+            p.outOfStock.signalAll();
         }
         finally {
-            p.lock.unlock();
+            lock.unlock();
         }
     }
 
     // Errado se faltar algum produto...
-    public void consume(Set<String> items) throws InterruptedException {
-        for (String s : items) {
-            Product p = get(s);
-            p.lock.lock();
-            try {
-                if (p.quantity <= 0) {
-                    while (p.quantity <= 0) {
-                        p.outOfStock.await();
-                    }
-                } else {
-                    p.quantity--;
+    public void consumeEgoista(Set<String> items) throws InterruptedException {
+        //versão egoísta
+        lock.lock();
+        try {
+            for (String s : items) {
+                Product p = get(s);
+                while (p.quantity <= 0) {
+                    p.outOfStock.await();
                 }
+                p.quantity--;
             }
-            finally {
-                p.lock.unlock();
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
+    private Product missing(Product[] a) throws InterruptedException {
+        for (Product p : a) {
+            if (p.quantity <= 0) {
+                return p;
             }
+        }
+        return null;
+    }
+
+    public void consumeCooperativa(Set<String> items) throws InterruptedException {
+        //versão cooperativa
+        lock.lock();
+        try {
+            Product[] a = new Product[items.size()];
+            int i = 0;
+            for(String item : items) {
+                a[i++] = get(item);
+            }
+
+            while (true){
+                Product m = missing(a);
+                if (m == null) {
+                    break;
+                }
+
+                m.outOfStock.await();
+            }
+
+            for (Product p : a) {
+                p.quantity--;
+            }
+        }
+        finally {
+            lock.unlock();
         }
     }
 
