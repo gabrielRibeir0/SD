@@ -77,6 +77,13 @@ class Warehouse {
 
                 m.outOfStock.await();
             }
+            /* Alternativa sem função auxiliar
+            for(int i = 0; i < a.length; i++){
+                if(a[i].quantity <= 0) {
+                    a[i].outOfStock.await();
+                    i = -1; // para a primeira posição no reset ser lida (incrementa e vai para 0)
+                }
+            }*/
 
             for (Product p : a) {
                 p.quantity--;
