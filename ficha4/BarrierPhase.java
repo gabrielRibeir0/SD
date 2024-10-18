@@ -2,41 +2,35 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Agreement {
+public class BarrierPhase {
     private Lock lock = new ReentrantLock();
     private Condition condition = lock.newCondition();
     private final int N;
     private int count = 0;
+    private int phase = 0;
 
-    private static class Instance{
-        int maxValue = Integer.MIN_VALUE;
-    }
-    private Instance current = new Instance();
-
-    public Agreement(int N) {
+    public BarrierPhase(int N) {
         this.N = N;
     }
 
-    int propose(int choice) throws InterruptedException {
+    //adiar o return
+    void await() throws InterruptedException {
         lock.lock();
 
         try{
-            Instance my = this.current;
-            my.maxValue = Math.max(my.maxValue, choice);
+            int phase = this.phase;
             this.count++;
 
             if(this.count < N) {
-                while (this.current == my) {
+                while (this.phase == phase) {
                     condition.await();
                 }
             }
             else {
                 condition.signalAll();
                 this.count = 0;
-                this.current = new Instance();
+                this.phase++;
             }
-
-            return my.maxValue;
         } finally {
             lock.unlock();
         }
