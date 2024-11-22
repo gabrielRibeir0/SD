@@ -9,7 +9,7 @@ public class SimpleClient {
 
         // send requests
         c.send("Ola".getBytes());
-        c.send("Hola".getBytes());
+        c.send("Boas pessoal daqui já sabem quem fala".getBytes());
         c.send("Hello".getBytes());
 
         // get replies

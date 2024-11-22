@@ -3,12 +3,11 @@ package g8;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import static g8.TaggedConnection.Frame;
-
 public class SimpleServerWithWorkers {
     final static int WORKERS_PER_CONNECTION = 3;
 
     public static void main(String[] args) throws Exception {
+        System.out.println("SimpleServerWithWorkers started");
         ServerSocket ss = new ServerSocket(12345);
 
         while(true) {
